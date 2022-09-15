@@ -111,8 +111,8 @@ func normalizePackageName(name api.PkgName) api.PkgName {
 // Python. name is either "python2" or "python3", and python is the
 // name of an executable (either a full path or just a name like
 // "python3") to use when invoking Python. (This is used to implement
-// UPM_PYTHON2 and UPM_PYTHON3.)
-func pythonMakeBackend(name string, python string) api.LanguageBackend {
+// UPM_POETRY)
+func pythonMakeBackend(name string, poetry string) api.LanguageBackend {
 	info_func := func(name api.PkgName) api.PkgInfo {
 		res, err := http.Get(fmt.Sprintf("https://pypi.org/pypi/%s/json", string(name)))
 
@@ -199,8 +199,7 @@ func pythonMakeBackend(name string, python string) api.LanguageBackend {
 			// so complicated??)
 
 			outputB := util.GetCmdOutput([]string{
-				python, "-m", "poetry",
-				"config", "settings.virtualenvs.path",
+				poetry, "config", "settings.virtualenvs.path",
 			})
 			var path string
 			if err := json.Unmarshal(outputB, &path); err != nil {
@@ -225,7 +224,7 @@ func pythonMakeBackend(name string, python string) api.LanguageBackend {
 			}
 
 			version := strings.TrimSpace(string(util.GetCmdOutput([]string{
-				python, "-c",
+				poetry, "-c",
 				`import sys; print(".".join(map(str, sys.version_info[:2])))`,
 			})))
 
@@ -268,7 +267,7 @@ func pythonMakeBackend(name string, python string) api.LanguageBackend {
 		Add: func(pkgs map[api.PkgName]api.PkgSpec, projectName string) {
 			// Initalize the specfile if it doesnt exist
 			if !util.Exists("pyproject.toml") {
-				cmd := []string{python, "-m", "poetry", "init", "--no-interaction"}
+				cmd := []string{poetry, "init", "--no-interaction"}
 
 				if projectName != "" {
 					cmd = append(cmd, "--name", projectName)
@@ -277,7 +276,7 @@ func pythonMakeBackend(name string, python string) api.LanguageBackend {
 				util.RunCmd(cmd)
 			}
 
-			cmd := []string{python, "-m", "poetry", "add"}
+			cmd := []string{poetry, "add"}
 			for name, spec := range pkgs {
 				name := string(name)
 				spec := string(spec)
@@ -296,14 +295,14 @@ func pythonMakeBackend(name string, python string) api.LanguageBackend {
 			util.RunCmd(cmd)
 		},
 		Remove: func(pkgs map[api.PkgName]bool) {
-			cmd := []string{python, "-m", "poetry", "remove"}
+			cmd := []string{poetry, "remove"}
 			for name, _ := range pkgs {
 				cmd = append(cmd, string(name))
 			}
 			util.RunCmd(cmd)
 		},
 		Lock: func() {
-			util.RunCmd([]string{python, "-m", "poetry", "lock", "--no-update"})
+			util.RunCmd([]string{poetry, "lock", "--no-update"})
 		},
 		Install: func() {
 			// Unfortunately, this doesn't necessarily uninstall
@@ -311,7 +310,7 @@ func pythonMakeBackend(name string, python string) api.LanguageBackend {
 			// which happens for example if 'poetry remove' is
 			// interrupted. See
 			// <https://github.com/sdispater/poetry/issues/648>.
-			util.RunCmd([]string{python, "-m", "poetry", "install"})
+			util.RunCmd([]string{poetry, "-m", "poetry", "install"})
 		},
 		ListSpecfile: func() map[api.PkgName]api.PkgSpec {
 			pkgs, err := listSpecfile()
@@ -342,7 +341,7 @@ func pythonMakeBackend(name string, python string) api.LanguageBackend {
 			`import ((?:.|\\\n)*) as`,
 			`import ((?:.|\\\n)*)`,
 		}),
-		Guess: func() (map[api.PkgName]bool, bool) { return guess(python) },
+		Guess: func() (map[api.PkgName]bool, bool) { return guess(poetry) },
 	}
 }
 
@@ -437,30 +436,15 @@ func guess(python string) (map[api.PkgName]bool, bool) {
 	return pkgs, output.Success
 }
 
-// getPython2 returns either "python2" or the value of the UPM_PYTHON2
-// environment variable.
-func getPython2() string {
-	python2 := os.Getenv("UPM_PYTHON2")
-	if python2 != "" {
-		return python2
+// getPython2 returns either "poetry" or the value of the env var 'UPM_POETRY'
+func getPoetry() string {
+	poetry := os.Getenv("UPM_POETRY")
+	if poetry != "" {
+		return poetry
 	} else {
-		return "python2"
+		return "poetry"
 	}
 }
 
-// getPython3 returns either "python3" or the value of the UPM_PYTHON3
-// environment variable.
-func getPython3() string {
-	python3 := os.Getenv("UPM_PYTHON3")
-	if python3 != "" {
-		return python3
-	} else {
-		return "python3"
-	}
-}
-
-// Python2Backend is a UPM backend for Python 2 that uses Poetry.
-var Python2Backend = pythonMakeBackend("python2", getPython2())
-
-// Python3Backend is a UPM backend for Python 3 that uses Poetry.
-var Python3Backend = pythonMakeBackend("python3", getPython3())
+// PythonBackend is a UPM backend for Python that uses Poetry.
+var PythonBackend = pythonMakeBackend("python", getPoetry())
