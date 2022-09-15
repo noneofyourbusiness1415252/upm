@@ -436,7 +436,7 @@ func guess(python string) (map[api.PkgName]bool, bool) {
 	return pkgs, output.Success
 }
 
-// getPython2 returns either "poetry" or the value of the env var 'UPM_POETRY'
+// returns either "poetry" or the value of the env var 'UPM_POETRY'
 func getPoetry() string {
 	poetry := os.Getenv("UPM_POETRY")
 	if poetry != "" {
@@ -446,5 +446,5 @@ func getPoetry() string {
 	}
 }
 
-// PythonBackend is a UPM backend for Python that uses Poetry.
-var PythonBackend = pythonMakeBackend("python", getPoetry())
+// UPM backend for Python that uses Poetry.
+var Python3Backend = pythonMakeBackend("python3", getPoetry())
