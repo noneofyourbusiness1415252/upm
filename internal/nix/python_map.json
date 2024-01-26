@@ -599,6 +599,7 @@
   "ray":{"deps":["pkgs.py-spy"]},
   "rchitect":{"deps":["pkgs.R"]},
   "rdkit":{"deps":["pkgs.cairo","pkgs.catch2","pkgs.comic-neue","pkgs.coordgenlibs","pkgs.eigen","pkgs.inchi","pkgs.maeparser","pkgs.rapidjson"]},
+  "readline":{"deps":["pkgs.readline"]},
   "reflex":{"deps":["pkgs.unzip"]},
   "reportengine":{"deps":["pkgs.pandoc"]},
   "reportlab":{"deps":["pkgs.freetype","pkgs.glibcLocales"]},
